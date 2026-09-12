@@ -49,6 +49,45 @@ function fileToResizedDataUrl(file: File, max = 256): Promise<string> {
   });
 }
 
+const flamePath =
+  "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z";
+
+const FLAME_URL = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="20" fill="#ffffff"/><path d="${flamePath}" fill="#f47721" transform="translate(5 5) scale(2.25)"/></svg>`
+)}`;
+
+function roundImage(src: string, size = 88, radius = 26): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("Imagem inválida."));
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Não foi possível processar a imagem."));
+        return;
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.fill();
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.clip();
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      ctx.restore();
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.src = src;
+  });
+}
+
 export default function SettingsAdmin() {
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +98,27 @@ export default function SettingsAdmin() {
   const [newPin, setNewPin] = useState("");
   const [pinBusy, setPinBusy] = useState(false);
 
+  const [qrCenterImg, setQrCenterImg] = useState(FLAME_URL);
+
   const qrRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!settings?.logo) {
+      setQrCenterImg(FLAME_URL);
+      return;
+    }
+    let alive = true;
+    roundImage(settings.logo)
+      .then((rounded) => {
+        if (alive) setQrCenterImg(rounded);
+      })
+      .catch(() => {
+        if (alive) setQrCenterImg(FLAME_URL);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [settings?.logo]);
 
   useEffect(() => {
     api
@@ -376,17 +435,20 @@ export default function SettingsAdmin() {
                 QR code do cardápio
               </h2>
             </div>
-            <div className="mt-4 flex justify-center">
-              <div className="rounded-2xl bg-white p-3">
-                <QRCodeCanvas
-                  ref={qrRef}
-                  value={menuUrl || "https://hamburguer-bem-production.up.railway.app"}
-                  size={160}
-                  level="M"
-                  bgColor="#ffffff"
-                  fgColor="#171614"
-                  marginSize={1}
-                />
+            <div className="mx-auto mt-4 grid place-items-center">
+              <div className="rounded-[24px] bg-[#f47721] p-2 shadow-[0_10px_28px_rgba(244,119,33,0.28)]">
+                <div className="overflow-hidden rounded-[18px] bg-white p-1">
+                  <QRCodeCanvas
+                    ref={qrRef}
+                    value={menuUrl || "https://hamburguer-bem-production.up.railway.app"}
+                    size={176}
+                    level="M"
+                    bgColor="#ffffff"
+                    fgColor="#171614"
+                    marginSize={3}
+                    imageSettings={{ src: qrCenterImg, height: 48, width: 48, excavate: true }}
+                  />
+                </div>
               </div>
             </div>
             <p className="mt-3 flex items-center justify-center gap-1.5 break-all text-center text-[11px] text-[#171614]/50">
