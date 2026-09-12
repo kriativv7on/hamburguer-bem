@@ -160,3 +160,16 @@ export interface DashboardSummary {
 export interface ApiError {
   error: string;
 }
+
+export interface StoreSettings {
+  name: string;
+  tagline: string;
+  logo: string;
+  city: string;
+  address: string;
+  hours: string;
+  delivery_note: string;
+  whatsapp: string;
+  instagram: string;
+  phone: string;
+}

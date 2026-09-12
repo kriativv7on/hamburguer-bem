@@ -7,6 +7,7 @@ import {
   Lock,
   MessageSquareQuote,
   Receipt,
+  Settings as SettingsIcon,
   Table2,
   Users,
   Wallet,
@@ -19,15 +20,17 @@ import Customers from "./Customers";
 import ReviewsAdmin from "./Reviews";
 import Cash from "./Cash";
 import AdminMenu from "./Menu";
+import SettingsAdmin from "./Settings";
 
 const navItems = [
-  { path: "/admin/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { path: "/admin/pedidos", label: "Pedidos (PDV)", icon: Receipt },
-  { path: "/admin/cardapio", label: "Cardápio", icon: Flame },
-  { path: "/admin/mesas", label: "Mesas", icon: Table2 },
-  { path: "/admin/clientes", label: "Clientes", icon: Users },
-  { path: "/admin/avaliacoes", label: "Avaliações", icon: MessageSquareQuote },
-  { path: "/admin/caixa", label: "Caixa", icon: Wallet },
+  { path: "/admin/dashboard", label: "Visão geral", short: "Início", icon: LayoutDashboard },
+  { path: "/admin/pedidos", label: "Pedidos (PDV)", short: "Pedidos", icon: Receipt },
+  { path: "/admin/cardapio", label: "Cardápio", short: "Cardápio", icon: Flame },
+  { path: "/admin/mesas", label: "Mesas", short: "Mesas", icon: Table2 },
+  { path: "/admin/clientes", label: "Clientes", short: "Clientes", icon: Users },
+  { path: "/admin/avaliacoes", label: "Avaliações", short: "Avaliação", icon: MessageSquareQuote },
+  { path: "/admin/caixa", label: "Caixa", short: "Caixa", icon: Wallet },
+  { path: "/admin/configuracoes", label: "Configurações", short: "Config.", icon: SettingsIcon },
 ];
 
 export default function AdminLayout() {
@@ -105,9 +108,6 @@ export default function AdminLayout() {
                 {pinError}
               </p>
             )}
-            <p className="text-center text-[10px] leading-4 text-white/35">
-              PIN padrão de demonstração: 1234
-            </p>
           </div>
         </form>
       </div>
@@ -155,8 +155,25 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#171614] px-2 py-2 text-[#f5f1e8] md:hidden">
-        <nav className="flex justify-around">
+      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#171614] px-2 pb-1.5 pt-1.5 text-[#f5f1e8] md:hidden">
+        <div className="mb-1 flex items-center justify-between px-2">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#f5f1e8]/70 transition-colors hover:text-[#f47721]"
+          >
+            <ArrowLeft size={13} /> Ver cardápio
+          </Link>
+          <button
+            onClick={() => {
+              setAdminPin("");
+              setAuthed(false);
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#f5f1e8]/70 transition-colors hover:text-[#f47721]"
+          >
+            <Lock size={13} /> Sair
+          </button>
+        </div>
+        <nav className="flex w-full items-center gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = sub === item.path.replace("/admin/", "");
@@ -164,16 +181,16 @@ export default function AdminLayout() {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.08em] ${active ? "text-[#f47721]" : "text-[#f5f1e8]/50"}`}
+                className={`flex flex-none items-center gap-1.5 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] whitespace-nowrap transition-colors ${active ? "bg-[#f47721] text-[#171614]" : "text-[#f5f1e8]/50 hover:text-[#f5f1e8]"}`}
               >
-                <Icon size={17} /> {item.label}
+                <Icon size={15} /> {item.short}
               </Link>
             );
           })}
         </nav>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-24 md:ml-[230px]">
+      <main className="min-w-0 flex-1 pb-40 md:ml-[230px] md:pb-12">
         <div className="mx-auto max-w-6xl px-5 py-8 md:px-10">
           {sub === "cardapio" && <AdminMenu />}
           {sub === "pedidos" && <Orders />}
@@ -181,6 +198,7 @@ export default function AdminLayout() {
           {sub === "clientes" && <Customers />}
           {sub === "avaliacoes" && <ReviewsAdmin />}
           {sub === "caixa" && <Cash />}
+          {sub === "configuracoes" && <SettingsAdmin />}
           {(sub === "" || sub === "dashboard") && <Dashboard />}
         </div>
       </main>

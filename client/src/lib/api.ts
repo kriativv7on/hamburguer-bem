@@ -9,6 +9,7 @@ import type {
   OrderStatus,
   Product,
   Review,
+  StoreSettings,
   Table,
 } from "@shared/types";
 
@@ -134,6 +135,12 @@ export const api = {
   addCashMovement: (body: { type: string; description: string; amount: number }) =>
     request<CashMovement>("/api/cash/movements", { method: "POST", body: JSON.stringify(body) }),
   getDashboard: () => request<DashboardSummary>("/api/dashboard"),
+  getSettings: () => request<StoreSettings>("/api/settings"),
+  getAdminSettings: () => request<StoreSettings>("/api/admin/settings"),
+  updateSettings: (body: Partial<StoreSettings>) =>
+    request<StoreSettings>("/api/admin/settings", { method: "PUT", body: JSON.stringify(body) }),
+  changePin: (body: { currentPin: string; newPin: string }) =>
+    request<{ ok: boolean }>("/api/admin/password", { method: "POST", body: JSON.stringify(body) }),
   checkAdminPin: (pin: string) =>
     request<{ ok: boolean }>("/api/admin/check", {}, pin),
 };

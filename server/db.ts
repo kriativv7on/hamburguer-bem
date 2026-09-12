@@ -1,7 +1,28 @@
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { mkdirSync } from "node:fs";
-import type { Combo, ComboItem, Coupon, Product } from "../shared/types.ts";
+import type {
+  Combo,
+  ComboItem,
+  Coupon,
+  Product,
+  StoreSettings,
+} from "../shared/types.ts";
+
+const DEFAULT_SETTINGS: Record<string, string> = {
+  name: "Hambúrguer Bem",
+  tagline: "Comida honesta, molho na medida e vontade de fazer cada pedido valer a pena.",
+  city: "Nova Iguaçu, RJ",
+  address: "Endereço da loja em breve · delivery pela região",
+  hours: "Ter–Dom · 18h–23h",
+  delivery_note: "Entrega local",
+  whatsapp: "",
+  instagram: "",
+  phone: "",
+  logo: "",
+};
+
+export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS);
 
 export const db: DatabaseSync = createDatabase();
 
@@ -13,6 +34,7 @@ function createDatabase(): DatabaseSync {
   database.exec("PRAGMA foreign_keys = ON;");
   migrate(database);
   seedIfEmpty(database);
+  ensureDefaultSettings(database);
   return database;
 }
 
@@ -127,6 +149,11 @@ function migrate(database: DatabaseSync) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_combo_items_combo ON combo_items(combo_id);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    );
   `);
 
   ensureColumn(database, "products", "promo_price", "REAL");
@@ -380,4 +407,38 @@ export function nextOrderNumber(): number {
     max: number;
   };
   return row.max + 1;
+}
+
+export function getSetting(key: string): string {
+  const row = db
+    .prepare("SELECT value FROM settings WHERE key = ?")
+    .get(key) as { value: string } | undefined;
+  return row?.value ?? DEFAULT_SETTINGS[key] ?? "";
+}
+
+export function setSetting(key: string, value: string) {
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(key, value);
+}
+
+export function getSettings(): StoreSettings {
+  const settings = {} as StoreSettings;
+  for (const key of SETTING_KEYS) {
+    settings[key as keyof StoreSettings] = getSetting(key);
+  }
+  return settings;
+}
+
+export function getAdminPin(): string {
+  return getSetting("admin_pin") || process.env.ADMIN_PIN || "1234";
+}
+
+function ensureDefaultSettings(database: DatabaseSync) {
+  const insert = database.prepare(
+    "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)"
+  );
+  for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+    insert.run(key, value);
+  }
 }

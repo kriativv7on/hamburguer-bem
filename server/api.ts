@@ -1,9 +1,11 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import {
   db,
+  getAdminPin,
   getCombo,
   getCouponByCode,
   getProduct,
+  getSettings,
   listActiveCombos,
   listActiveProducts,
   listCategories,
@@ -11,6 +13,8 @@ import {
   listCoupons,
   listProducts,
   nextOrderNumber,
+  SETTING_KEYS,
+  setSetting,
 } from "./db.ts";
 import type {
   CreateOrder,
@@ -18,8 +22,6 @@ import type {
   OrderStatus,
   CashMovementType,
 } from "../shared/types.ts";
-
-const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
 
 export function createApi() {
   const api = express();
@@ -35,6 +37,36 @@ export function createApi() {
       products: listActiveProducts(),
       combos: listActiveCombos(),
     });
+  });
+
+  api.get("/api/settings", (_req, res) => {
+    const settings = getSettings();
+    res.json({
+      name: settings.name,
+      tagline: settings.tagline,
+      logo: settings.logo,
+      city: settings.city,
+      address: settings.address,
+      hours: settings.hours,
+      delivery_note: settings.delivery_note,
+      whatsapp: settings.whatsapp,
+      instagram: settings.instagram,
+      phone: settings.phone,
+    });
+  });
+
+  api.get("/api/admin/settings", requireAdmin, (_req, res) => {
+    res.json(getSettings());
+  });
+
+  api.put("/api/admin/settings", requireAdmin, (req, res) => {
+    const body = req.body ?? {};
+    for (const key of SETTING_KEYS) {
+      if (typeof body[key] === "string") {
+        setSetting(key, body[key].trim());
+      }
+    }
+    res.json(getSettings());
   });
 
   api.get("/api/admin/menu", requireAdmin, (_req, res) => {
@@ -767,12 +799,27 @@ export function createApi() {
     res.json({ ok: true });
   });
 
+  api.post("/api/admin/password", requireAdmin, (req, res) => {
+    const currentPin = String(req.body?.currentPin ?? "");
+    const newPin = String(req.body?.newPin ?? "");
+    if (currentPin !== getAdminPin()) {
+      res.status(401).json({ error: "PIN atual incorreto." });
+      return;
+    }
+    if (!/^\d{4,8}$/.test(newPin)) {
+      res.status(400).json({ error: "O novo PIN deve ter de 4 a 8 dígitos." });
+      return;
+    }
+    setSetting("admin_pin", newPin);
+    res.json({ ok: true });
+  });
+
   return api;
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const pin = String(req.header("x-admin-pin") ?? "");
-  if (pin !== ADMIN_PIN) {
+  if (pin !== getAdminPin()) {
     res.status(401).json({ error: "PIN de administrador inválido." });
     return;
   }

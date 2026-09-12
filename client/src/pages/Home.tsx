@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, formatBRL, orderTypeLabels } from "@/lib/api";
-import type { Combo, Order, OrderType, PaymentMethod, Product, Review, Table } from "@shared/types";
+import type { Combo, Order, OrderType, PaymentMethod, Product, Review, StoreSettings, Table } from "@shared/types";
 
 const heroImage = "/images/burger-hero.jpg";
 const friesImage = "/images/fries.jpg";
@@ -154,6 +154,7 @@ export default function Home() {
   const [combos, setCombos] = useState<Combo[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+const [settings, setSettings] = useState<StoreSettings | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -186,6 +187,7 @@ export default function Home() {
       .catch(() => {});
     api.getReviews().then(setReviews).catch(() => {});
     api.getTables().then(setTables).catch(() => {});
+    api.getSettings().then(setSettings).catch(() => {});
   }, []);
 
   const categoryNames = useMemo(
@@ -213,6 +215,13 @@ export default function Home() {
     return Math.round(discount * 100) / 100;
   }, [coupon, cartSubtotal]);
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount);
+
+  const instagramUrl = settings?.instagram
+    ? `https://instagram.com/${settings.instagram.replace(/^@/, "")}`
+    : "";
+  const whatsappUrl = settings?.whatsapp
+    ? `https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`
+    : "";
 
   const addToCart = (product: Product) => {
     const key = `p-${product.id}`;
@@ -374,10 +383,20 @@ export default function Home() {
       <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[#171614]/90 text-[#f5f1e8] backdrop-blur-xl">
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
           <a href="#inicio" className="group flex items-center gap-3" aria-label="Ir para o início">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#f47721] text-[#171614] transition-transform duration-200 group-hover:rotate-6">
-              <Flame size={21} strokeWidth={2.7} />
+            {settings?.logo ? (
+              <img
+                src={settings.logo}
+                alt={settings.name}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#f47721] text-[#171614] transition-transform duration-200 group-hover:rotate-6">
+                <Flame size={21} strokeWidth={2.7} />
+              </span>
+            )}
+            <span className="font-display text-[25px] leading-none tracking-[0.04em]">
+              {settings?.name?.toUpperCase() || "HAMBÚRGUER BEM"}
             </span>
-            <span className="font-display text-[25px] leading-none tracking-[0.04em]">HAMBÚRGUER BEM</span>
           </a>
 
           <nav className="hidden items-center gap-8 text-[12px] font-bold uppercase tracking-[0.16em] md:flex">
@@ -659,8 +678,8 @@ export default function Home() {
 
         <section id="onde-estamos" className="scroll-mt-24 border-t border-[#171614]/10 bg-[#e8dfd0] px-5 py-16 sm:px-8 lg:px-10">
           <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-7 md:flex-row md:items-center">
-            <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#171614] text-[#f47721]"><MapPin size={20} /></span><div><p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d96014]">Onde estamos</p><p className="mt-2 font-display text-3xl tracking-[0.03em]">NOVA IGUAÇU, RJ</p><p className="mt-1 text-sm text-[#171614]/55">Endereço da loja em breve · delivery pela região</p></div></div>
-            <div className="flex flex-wrap gap-3"><span className="inline-flex items-center gap-2 rounded-full border border-[#171614]/15 px-4 py-3 text-xs font-bold"><Clock3 size={15} className="text-[#d96014]" /> Ter–Dom · 18h–23h</span><span className="inline-flex items-center gap-2 rounded-full border border-[#171614]/15 px-4 py-3 text-xs font-bold"><Truck size={15} className="text-[#d96014]" /> Entrega local</span></div>
+            <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#171614] text-[#f47721]"><MapPin size={20} /></span><div><p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d96014]">Onde estamos</p><p className="mt-2 font-display text-3xl tracking-[0.03em]">{settings?.city ? settings.city.toUpperCase() : "NOVA IGUAÇU, RJ"}</p><p className="mt-1 text-sm text-[#171614]/55">{settings?.address || "Endereço da loja em breve · delivery pela região"}</p></div></div>
+            <div className="flex flex-wrap gap-3"><span className="inline-flex items-center gap-2 rounded-full border border-[#171614]/15 px-4 py-3 text-xs font-bold"><Clock3 size={15} className="text-[#d96014]" /> {settings?.hours || "Ter–Dom · 18h–23h"}</span><span className="inline-flex items-center gap-2 rounded-full border border-[#171614]/15 px-4 py-3 text-xs font-bold"><Truck size={15} className="text-[#d96014]" /> {settings?.delivery_note || "Entrega local"}</span></div>
           </div>
         </section>
 
@@ -670,7 +689,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-[#171614] px-5 py-10 text-[#f5f1e8] sm:px-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#f47721] text-[#171614]"><Flame size={18} /></span><span className="font-display text-2xl tracking-[0.04em]">HAMBÚRGUER BEM</span></div><p className="mt-4 max-w-[320px] text-sm leading-6 text-[#f5f1e8]/45">Comida honesta, molho na medida e vontade de fazer cada pedido valer a pena.</p></div><div className="flex items-center gap-3"><a href="/admin" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="Painel administrativo" title="Painel administrativo"><Sparkles size={18} /></a><button onClick={() => toast("Instagram demonstrativo", { description: "Adicione o @ oficial da hamburgueria quando estiver pronto." })} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="Instagram"><Instagram size={18} /></button><button onClick={() => toast("WhatsApp demonstrativo", { description: "Adicione o número real para ativar o atendimento." })} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="WhatsApp"><MessageCircle size={18} /></button></div></div><div className="mx-auto mt-10 flex max-w-7xl flex-col justify-between gap-2 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#f5f1e8]/35 sm:flex-row"><span>© 2026 Hambúrguer Bem</span><span>Feito com fome em Nova Iguaçu</span></div></footer>
+      <footer className="bg-[#171614] px-5 py-10 text-[#f5f1e8] sm:px-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 sm:flex-row sm:items-end"><div><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#f47721] text-[#171614]">{settings?.logo ? <img src={settings.logo} alt="" className="h-full w-full object-cover" /> : <Flame size={18} />}</span><span className="font-display text-2xl tracking-[0.04em]">{settings?.name?.toUpperCase() || "HAMBÚRGUER BEM"}</span></div><p className="mt-4 max-w-[320px] text-sm leading-6 text-[#f5f1e8]/45">{settings?.tagline || "Comida honesta, molho na medida e vontade de fazer cada pedido valer a pena."}</p></div><div className="flex items-center gap-3"><a href="/admin" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="Painel administrativo" title="Painel administrativo"><Sparkles size={18} /></a>{instagramUrl ? (<a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="Instagram" title={`Instagram @${settings?.instagram}`}><Instagram size={18} /></a>) : (<button onClick={() => toast("Instagram demonstrativo", { description: "Defina o @ oficial nas Configurações do painel." })} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="Instagram"><Instagram size={18} /></button>)}{whatsappUrl ? (<a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="WhatsApp" title="WhatsApp"><MessageCircle size={18} /></a>) : (<button onClick={() => toast("WhatsApp demonstrativo", { description: "Defina o número nas Configurações do painel." })} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 transition-colors hover:border-[#f47721] hover:text-[#f47721]" aria-label="WhatsApp"><MessageCircle size={18} /></button>)}</div></div><div className="mx-auto mt-10 flex max-w-7xl flex-col justify-between gap-2 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#f5f1e8]/35 sm:flex-row"><span>© {new Date().getFullYear()} {settings?.name || "Hambúrguer Bem"}</span><span>Feito com fome em {settings?.city || "Nova Iguaçu"}</span></div></footer>
 
       {cartOpen && (
         <div className="fixed inset-0 z-50 bg-[#171614]/60 backdrop-blur-sm" onClick={() => setCartOpen(false)}>
