@@ -5,12 +5,14 @@ import {
   Flame,
   LayoutDashboard,
   Lock,
+  Menu,
   MessageSquareQuote,
   Receipt,
   Settings as SettingsIcon,
   Table2,
   Users,
   Wallet,
+  X,
 } from "lucide-react";
 import { api, clearAdminPin, getAdminPin, setAdminPin, setUnauthorizedHandler } from "@/lib/api";
 import Dashboard from "./Dashboard";
@@ -39,6 +41,7 @@ export default function AdminLayout() {
   const [checking, setChecking] = useState(false);
   const [match, params] = useRoute("/admin/:sub*");
   const sub = match ? (params?.["sub*"] ?? "dashboard") : "dashboard";
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -155,43 +158,89 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#171614] px-2 pb-1.5 pt-1.5 text-[#f5f1e8] md:hidden">
-        <div className="mb-1 flex items-center justify-between px-2">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#f5f1e8]/70 transition-colors hover:text-[#f47721]"
-          >
-            <ArrowLeft size={13} /> Ver cardápio
-          </Link>
-          <button
-            onClick={() => {
-              setAdminPin("");
-              setAuthed(false);
-            }}
-            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#f5f1e8]/70 transition-colors hover:text-[#f47721]"
-          >
-            <Lock size={13} /> Sair
-          </button>
-        </div>
-        <nav className="flex w-full items-center gap-1 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = sub === item.path.replace("/admin/", "");
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex flex-none items-center gap-1.5 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] whitespace-nowrap transition-colors ${active ? "bg-[#f47721] text-[#171614]" : "text-[#f5f1e8]/50 hover:text-[#f5f1e8]"}`}
-              >
-                <Icon size={15} /> {item.short}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-white/10 bg-[#171614]/95 px-4 text-[#f5f1e8] backdrop-blur-xl md:hidden">
+        <button
+          onClick={() => setMobileNavOpen(true)}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 text-[#f5f1e8]/80 transition-colors hover:border-[#f47721] hover:text-[#f47721]"
+          aria-label="Abrir menu"
+        >
+          <Menu size={19} />
+        </button>
+        <span className="min-w-0 truncate font-display text-sm tracking-[0.04em]">HAMBÚRGUER BEM</span>
+        <Link
+          href="/"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 text-[#f5f1e8]/80 transition-colors hover:border-[#f47721] hover:text-[#f47721]"
+          aria-label="Ver cardápio"
+          title="Ver cardápio"
+        >
+          <ArrowLeft size={17} />
+        </Link>
+      </header>
 
-      <main className="min-w-0 flex-1 pb-40 md:ml-[230px] md:pb-12">
-        <div className="mx-auto max-w-6xl px-5 py-8 md:px-10">
+      <div className={`fixed inset-0 z-50 md:hidden ${mobileNavOpen ? "" : "pointer-events-none"}`} aria-hidden={!mobileNavOpen}>
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${mobileNavOpen ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setMobileNavOpen(false)}
+        />
+        <aside
+          className={`absolute inset-y-0 left-0 flex w-[270px] flex-col bg-[#171614] px-4 py-6 text-[#f5f1e8] transition-transform duration-200 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
+          <div className="flex items-center justify-between px-2">
+            <span className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#f47721] text-[#171614]">
+                <Flame size={18} />
+              </span>
+              <span className="font-display text-lg leading-none tracking-[0.04em]">HAMBÚRGUER<br />BEM</span>
+            </span>
+            <button
+              onClick={() => setMobileNavOpen(false)}
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-[#f5f1e8]/70 transition-colors hover:border-[#f47721] hover:text-[#f47721]"
+              aria-label="Fechar menu"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <p className="mt-6 px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Gestão</p>
+          <nav className="mt-3 flex flex-col gap-1">
+            {navItems.map((item) => {
+              const active = sub === item.path.replace("/admin/", "") || (sub === "" && item.path === "/admin/dashboard");
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-bold uppercase tracking-[0.1em] transition-colors ${active ? "bg-[#f47721] text-[#171614]" : "text-[#f5f1e8]/60 hover:bg-white/5 hover:text-[#f5f1e8]"}`}
+                >
+                  <Icon size={16} /> {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="mt-auto space-y-2">
+            <Link
+              href="/"
+              onClick={() => setMobileNavOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-bold uppercase tracking-[0.1em] text-[#f5f1e8]/60 transition-colors hover:bg-white/5 hover:text-[#f5f1e8]"
+            >
+              <ArrowLeft size={16} /> Ver cardápio
+            </Link>
+            <button
+              onClick={() => {
+                setAdminPin("");
+                setAuthed(false);
+                setMobileNavOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-bold uppercase tracking-[0.1em] text-[#f5f1e8]/60 transition-colors hover:bg-white/5 hover:text-[#f47721]"
+            >
+              <Lock size={16} /> Sair
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <main className="min-w-0 flex-1 md:ml-[230px]">
+        <div className="mx-auto max-w-6xl px-5 pb-12 pt-20 md:px-10 md:py-8">
           {sub === "cardapio" && <AdminMenu />}
           {sub === "pedidos" && <Orders />}
           {sub === "mesas" && <Tables />}
