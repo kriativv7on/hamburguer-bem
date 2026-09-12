@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: hamburguer-bem
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_PIN
+        sync: false
+        injectFrom: admin_pin
+    disk:
+      name: hamburguer-bem-data
+      mountPath: /data
+      sizeGB: 1

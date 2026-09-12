@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+
+# Fonte de imagens não usada no build (cópias servidas ficam em client/public/images)
+assets/
+
+# Dev artifacts (Manus debug collector)
+.manus-logs/
+.dev-start.log
+dev.pid
+
+# Database (persistido no servidor; nunca subir para o repo)
+data/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+# keep .env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
