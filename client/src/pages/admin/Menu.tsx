@@ -76,9 +76,22 @@ function ImageInput({ value, onChange }: { value: string; onChange: (value: stri
             if (!file) return;
             const reader = new FileReader();
             reader.onload = () => {
-              const url = String(reader.result ?? "");
-              setPreview(url);
-              onChange(url);
+              const img = new Image();
+              img.onerror = () => {};
+              img.onload = () => {
+                const max = 900;
+                const scale = Math.min(1, max / Math.max(img.width, img.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(img.width * scale));
+                canvas.height = Math.max(1, Math.round(img.height * scale));
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const url = canvas.toDataURL("image/jpeg", 0.82);
+                setPreview(url);
+                onChange(url);
+              };
+              img.src = String(reader.result ?? "");
             };
             reader.readAsDataURL(file);
           }}

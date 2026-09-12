@@ -25,7 +25,7 @@ import type {
 
 export function createApi() {
   const api = express();
-  api.use(express.json());
+  api.use(express.json({ limit: "10mb" }));
 
   api.get("/api/health", (_req, res) => {
     res.json({ ok: true });
